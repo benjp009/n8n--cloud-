@@ -2,13 +2,14 @@ substitutions:
   _REGION: europe-west1      # keep build, registry and service in the same region
   _REPO: n8n-repo
   _SERVICE: n8n
+  _TAG: "local" 
 steps:
 # 1. Build
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['build','-t','${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:$SHORT_SHA','.']
+- args: ['build','-t','${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:${_TAG}','.']
 # 2. Push
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['push','${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:$SHORT_SHA']
+- args: ['push','${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:${_TAG}']
 # 3. Deploy to Cloud Run
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   entrypoint: gcloud
