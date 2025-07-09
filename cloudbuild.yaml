@@ -1,0 +1,30 @@
+substitutions:
+  _REGION: europe-west1      # keep build, registry and service in the same region
+  _REPO: n8n-repo
+  _SERVICE: n8n
+steps:
+# 1. Build
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build','-t','${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:$SHORT_SHA','.']
+# 2. Push
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push','${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:$SHORT_SHA']
+# 3. Deploy to Cloud Run
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: gcloud
+  args:
+    - run
+    - deploy
+    - ${_SERVICE}
+    - '--image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:$SHORT_SHA'
+    - '--region=${_REGION}'
+    - '--platform=managed'
+    - '--port=5678'
+    - '--memory=1Gi'
+    - '--allow-unauthenticated'            # flip if you want private access
+    - '--add-cloudsql-instances=$(gcloud sql instances describe n8n-pg --format="value(connectionName)")'
+    - '--set-env-vars=GENERIC_TIMEZONE=Europe/Paris,TZ=Europe/Paris,DB_TYPE=postgresdb,DB_POSTGRESDB_PORT=5432,DB_POSTGRESDB_DATABASE=n8ndb,DB_POSTGRESDB_HOST=/cloudsql/$(gcloud sql instances describe n8n-pg --format="value(connectionName)"),DB_POSTGRESDB_USER=n8n,N8N_BASIC_AUTH_ACTIVE=true,N8N_BASIC_AUTH_USER=admin'
+    - '--set-secrets=N8N_ENCRYPTION_KEY=n8n_encryption_key:latest,DB_POSTGRESDB_PASSWORD=n8n_db_password:latest'
+images:
+- '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:$SHORT_SHA'
+timeout: '900s'
