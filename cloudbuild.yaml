@@ -1,8 +1,7 @@
 substitutions:
   _REGION: europe-west1      # keep build, registry and service in the same region
-  _REPO: n8n-repo
+  _REPO: n8n--cloud-
   _SERVICE: n8n
-  _TAG: "local" 
 steps:
 # 1. Build
 - name: gcr.io/cloud-builders/docker:latest
